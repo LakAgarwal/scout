@@ -1,11 +1,11 @@
-services:
+databases:
   # 1. PostgreSQL Database Instance
-  - type: database
-    name: scout-postgres
+  - name: scout-postgres
     databaseName: scout_db
     user: scout
     plan: free
 
+services:
   # 2. FastAPI Backend Web Service
   - type: web
     name: scout-backend
