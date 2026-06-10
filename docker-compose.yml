@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: scout_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: scout_db
+      POSTGRES_USER: scout
+      POSTGRES_PASSWORD: scout_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scout -d scout_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: scout_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://scout:scout_password@postgres:5432/scout_db
+      - NEWSAPI_KEY=${NEWSAPI_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: scout_frontend
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: scout_pipeline
+    environment:
+      - DATABASE_URL=postgresql://scout:scout_password@postgres:5432/scout_db
+      - NEWSAPI_KEY=${NEWSAPI_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "data_pipeline.scheduler.pipeline_runner"]
+
+volumes:
+  postgres_data:
