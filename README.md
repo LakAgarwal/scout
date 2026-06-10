@@ -269,6 +269,18 @@ docker-compose up --build
 ```
 Access the Streamlit application at `http://localhost:8501` and the backend FastAPI docs at `http://localhost:8000/docs`.
 
+### Render Deployment (Blueprints)
+
+The project includes a `render.yaml` file that allows you to deploy the entire stack on Render in one click using Render Blueprints. 
+
+1. Push this repository to your GitHub account.
+2. Log in to the [Render Dashboard](https://dashboard.render.com).
+3. Click "New" and select "Blueprint".
+4. Connect this GitHub repository.
+5. Render will automatically detect the database, backend web service, frontend web service, and daily scheduler cron job from `render.yaml`.
+6. Define your environment variables in the Render Dashboard when prompted (e.g., `NEWSAPI_KEY`, `GEMINI_API_KEY`, `QDRANT_URL`, and `QDRANT_API_KEY`).
+7. Click "Approve" to deploy the entire infrastructure stack.
+
 ## Running Tests
 
 Execute the test suites using pytest:
