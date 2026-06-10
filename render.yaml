@@ -1,0 +1,67 @@
+services:
+  # 1. PostgreSQL Database Instance
+  - type: database
+    name: scout-postgres
+    databaseName: scout_db
+    user: scout
+    plan: free
+
+  # 2. FastAPI Backend Web Service
+  - type: web
+    name: scout-backend
+    env: docker
+    dockerfilePath: docker/Dockerfile.backend
+    context: .
+    plan: free
+    port: 8000
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scout-postgres
+          property: connectionString
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+
+  # 3. Streamlit Frontend Web Service
+  - type: web
+    name: scout-frontend
+    env: docker
+    dockerfilePath: docker/Dockerfile.frontend
+    context: .
+    plan: free
+    port: 8501
+    envVars:
+      - key: API_URL
+        fromService:
+          name: scout-backend
+          type: web
+          property: url
+
+  # 4. Scheduled Pipeline Runner (Cron Job)
+  - type: cron
+    name: scout-pipeline
+    env: docker
+    dockerfilePath: docker/Dockerfile.backend
+    context: .
+    schedule: "0 0 * * *" # Runs daily at midnight UTC
+    plan: free
+    startCommand: python -m data_pipeline.scheduler.pipeline_runner --run-topics
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scout-postgres
+          property: connectionString
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
