@@ -25,7 +25,8 @@ target_metadata = Base.metadata
 
 # Override the database URL in alembic configuration with the environment variable
 database_url = os.getenv("DATABASE_URL", "sqlite:///./scout_db.db")
-config.set_main_option("sqlalchemy.url", database_url)
+# Escape percent symbols to prevent ConfigParser from attempting interpolation
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
