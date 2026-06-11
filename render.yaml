@@ -1,15 +1,15 @@
 services:
-  # 1. FastAPI Backend Web Service (SQLite default)
+  # 1. FastAPI Backend Web Service
   - type: web
     name: scout-backend
     runtime: docker
     dockerfilePath: docker/Dockerfile.backend
-    context: .
     plan: free
-    port: 8000
     envVars:
+      - key: PORT
+        value: "8000"
       - key: DATABASE_URL
-        value: sqlite:///scout_db.db
+        sync: false
       - key: NEWSAPI_KEY
         sync: false
       - key: GEMINI_API_KEY
@@ -24,9 +24,9 @@ services:
     name: scout-frontend
     runtime: docker
     dockerfilePath: docker/Dockerfile.frontend
-    context: .
     plan: free
-    port: 8501
     envVars:
+      - key: PORT
+        value: "8501"
       - key: API_URL
         value: http://scout-backend:8000
