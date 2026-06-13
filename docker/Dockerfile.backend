@@ -3,6 +3,7 @@ WORKDIR /app
 # Install system deps for psycopg2, torch
 RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 # Run Alembic migrations on startup, then start server

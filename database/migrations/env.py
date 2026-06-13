@@ -23,8 +23,9 @@ if config.config_file_name is not None:
 from database.models import Base
 target_metadata = Base.metadata
 
-# Override the database URL in alembic configuration with the environment variable
 database_url = os.getenv("DATABASE_URL", "sqlite:///./scout_db.db")
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 # Escape percent symbols to prevent ConfigParser from attempting interpolation
 config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 

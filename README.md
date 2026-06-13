@@ -271,19 +271,60 @@ Access the Streamlit application at `http://localhost:8501` and the backend Fast
 
 ### Render Deployment (Blueprints)
 
-The project includes a `render.yaml` file that allows you to deploy the entire stack on Render in one click using Render Blueprints. 
+The project includes a unified `render.yaml` file that allows you to deploy the entire infrastructure stack on Render in one click using Render Blueprints.
+
+#### Architecture on Render
+When you deploy this Blueprint, Render automatically provisions and configures the following resources:
+1. **PostgreSQL Database (`scout-db`):** Shared database instance storing article metadata, sentiment logs, competitor mentions, and keyword frequencies.
+2. **FastAPI Backend (`scout-backend`):** High-performance API server that runs database migrations automatically on startup and serves the frontend.
+3. **Streamlit Frontend (`scout-frontend`):** Web application serving the dashboard, explorer, competitor views, and research agent. It communicates with the backend privately using Render's internal private networking (`http://scout-backend:8000`).
+4. **Daily Ingestion Scheduler (`scout-pipeline`):** An ephemeral Render Cron Job service that executes the article collection and weekly topic modeling pipeline daily at midnight UTC.
+
+#### Setup Steps
 
 1. Push this repository to your GitHub account.
 2. Log in to the [Render Dashboard](https://dashboard.render.com).
-3. Click "New" and select "Blueprint".
-4. Connect this GitHub repository.
-5. Render will automatically detect the database, backend web service, frontend web service, and daily scheduler cron job from `render.yaml`.
-6. Define your environment variables in the Render Dashboard when prompted (e.g., `NEWSAPI_KEY`, `GEMINI_API_KEY`, `QDRANT_URL`, and `QDRANT_API_KEY`).
-7. Click "Approve" to deploy the entire infrastructure stack.
+3. Click **New** (top right) and select **Blueprint**.
+4. Connect your GitHub repository.
+5. Render will scan `render.yaml` and list all services to be created.
+6. Provide values for the required environment variables:
+   - `NEWSAPI_KEY`: Your NewsAPI developer token.
+   - `GEMINI_API_KEY`: Your Google Gemini API Key.
+   - `QDRANT_URL`: Your Qdrant Cloud Cluster URL.
+   - `QDRANT_API_KEY`: Your Qdrant Cloud API token.
+7. Click **Approve** to deploy the infrastructure. Render will automatically link the database URL to the backend and the cron job.
+
+---
+
+### Troubleshooting Backend Deployment Issues
+
+If your backend web service is failing to deploy or run on Render, check the following common failure modes:
+
+#### 1. SQLAlchemy Connection Dialect Error (`postgres://` vs `postgresql://`)
+* **Problem:** Render's default database connection string uses the `postgres://` prefix. However, SQLAlchemy 1.4+ and 2.0+ have deprecated this prefix in favor of `postgresql://`. If left unmodified, the backend will crash on startup with:
+  `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects.postgresql.postgres`
+* **Resolution:** We have added an automatic translation helper in [connection.py](file:///c:/Users/BIT/Desktop/vs%20code%20setup/llm/database/connection.py) and [env.py](file:///c:/Users/BIT/Desktop/vs%20code%20setup/llm/database/migrations/env.py) that detects the `postgres://` prefix and replaces it with `postgresql://` before initializing the database connection or running migrations.
+
+#### 2. Out of Memory (OOM) During Docker Build
+* **Problem:** Installing deep learning libraries (`torch`, `transformers`, `keybert`, `bertopic`) can consume excessive RAM, causing Render's free build container (which has 512MB RAM) to terminate with an Out of Memory error or run out of disk space.
+* **Resolution:** 
+  - We use the `--no-cache-dir` pip flag to prevent disk bloating.
+  - If your builds still run out of memory, you can configure your Dockerfiles to pre-install CPU-only versions of PyTorch to reduce sizes, or upgrade your Render build plan to **Starter** to get more build resources.
+
+#### 3. Database Migrations failing on Startup
+* **Problem:** The backend Dockerfile is configured to run database migrations (`alembic upgrade head`) before starting the Uvicorn server. If the PostgreSQL database has not finished provisioning or accepts no connections yet, the migrations fail and the backend container exits.
+* **Resolution:** Render manages startup ordering when using Blueprints, but if a crash occurs, wait for the database service to be fully healthy and trigger a manual redeploy of the `scout-backend` service.
+
+---
 
 ## Running Tests
 
-Execute the test suites using pytest:
+To run the unit and integration tests locally, set your python path and run pytest:
 ```bash
+# On Windows (PowerShell):
+$env:PYTHONPATH="."
 pytest tests/
+
+# On macOS/Linux:
+PYTHONPATH=. pytest tests/
 ```

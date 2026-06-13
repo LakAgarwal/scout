@@ -8,6 +8,11 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/scout_db")
 
+# Render databases return postgres:// connection string, which SQLAlchemy 1.4+ no longer supports.
+# Replace with postgresql:// to ensure compatibility.
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # For sqlite compatibility during unit tests if needed
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
