@@ -1,0 +1,37 @@
+# Virtual environment
+venv/
+.venv/
+env/
+test_env/
+
+# Environment files
+.env
+
+# Database
+scout_db.db
+scout_db.db-journal
+
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Log files
+*.log
+.system_generated/
+
+# Testing caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE files
+.vscode/
+.idea/
+
+# Java
+**/target/
+*.class
+.factorypath
+
