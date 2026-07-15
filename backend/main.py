@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database.connection import get_db
@@ -10,6 +11,16 @@ app = FastAPI(
     description="AI-powered market intelligence and competitor research platform",
     version="1.0.0"
 )
+
+# Enable CORS for frontend local development and production origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins, can be restricted to ["http://localhost:5173", "http://127.0.0.1:5173"] in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Register routes
 app.include_router(articles_router, prefix="/api")

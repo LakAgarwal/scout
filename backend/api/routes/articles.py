@@ -8,7 +8,7 @@ from backend.schemas.article import ArticleOut
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
-@router.get("/", response_model=List[ArticleOut])
+@router.get("", response_model=List[ArticleOut])
 async def get_articles(
     skip: int = 0,
     limit: int = 100,
